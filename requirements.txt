@@ -1,0 +1,23 @@
+# ── PDF parsing ───────────────────────────────────────────────────────────────
+PyMuPDF>=1.24.0          # fitz — layout-aware text extraction, image xrefs
+pdfplumber>=0.11.0       # table structure detection from vector graphics
+
+# ── Image processing ──────────────────────────────────────────────────────────
+Pillow>=10.0.0           # resize_figure_if_needed — Voyage pixel-limit compliance
+
+# ── BM25 ──────────────────────────────────────────────────────────────────────
+rank-bm25>=0.2.2         # BM25Okapi in-process keyword index
+
+# ── Embeddings ────────────────────────────────────────────────────────────────
+voyageai>=0.3.0          # Voyage AI official Python SDK
+
+# ── Vector database ───────────────────────────────────────────────────────────
+pinecone>=5.0.0          # Pinecone serverless Python SDK
+
+# ── Environment & utilities ───────────────────────────────────────────────────
+python-dotenv>=1.0.0     # load .env file into os.environ
+
+# ── Query pipeline additions (Part B) ─────────────────────────────────────────
+langgraph>=0.2.0              # StateGraph — agent orchestration
+google-generativeai>=0.8.0   # Gemini 2.5 Flash SDK + structured output
+upstash-redis>=1.1.0          # Upstash Redis REST client
