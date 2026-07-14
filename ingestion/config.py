@@ -81,7 +81,7 @@ VOYAGE_MULTIMODAL_MODEL: str = "voyage-multimodal-3"
 VOYAGE_EMBEDDING_DIM: int = 1024          # output dimension for both models
 
 VOYAGE_TEXT_BATCH_SIZE: int = 128         # max texts per API call
-VOYAGE_MULTIMODAL_BATCH_SIZE: int = 16    # images are heavy; smaller batch is safer
+VOYAGE_MULTIMODAL_BATCH_SIZE: int = 6     # free-tier: 10K TPM / ~3 RPM → max ~3.3K tokens/batch
 
 # ── BM25 ──────────────────────────────────────────────────────────────────────
 BM25_INDEX_PATH: str = os.path.join(_PROJECT_ROOT, "data", "bm25_index", "bm25_index.pkl")
