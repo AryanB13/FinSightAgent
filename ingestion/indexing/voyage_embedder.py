@@ -360,50 +360,6 @@ def estimate_embedding_cost(chunks: list[Chunk]) -> dict:
 
 # ── Internal batch helpers ─────────────────────────────────────────────────────
 
-def _batch_embed_text(
-    texts: list[str],
-    client: voyageai.Client,
-    model: str,
-    input_type: str = "document",
-) -> list[list[float]]:
-    """
-    Executes one Voyage text embedding API call for a batch of *texts*.
-
-    Retries up to :data:`_MAX_RETRIES` times on
-    :class:`voyageai.error.RateLimitError` with exponential backoff
-    (1 s, 2 s, 4 s).  Re-raises any other exception immediately.
-
-    Args:
-        texts:      List of strings to embed (one API call).
-        client:     Initialised :class:`voyageai.Client`.
-        model:      Voyage model name.
-        input_type: ``"document"`` for chunks, ``"query"`` for queries.
-
-    Returns:
-        ``list[list[float]]`` — one 1024-dim vector per input text.
-    """
-    last_exc: Exception | None = None
-    for attempt in range(_MAX_RETRIES):
-        try:
-            result = client.embed(texts, model=model, input_type=input_type)
-            return result.embeddings
-        except Exception as exc:
-            exc_name = type(exc).__name__
-            if "RateLimit" in exc_name or "rate_limit" in str(exc).lower():
-                sleep_s = _RETRY_BASE_SLEEP * (2 ** attempt)
-                logger.warning(
-                    "_batch_embed_text: rate-limited (attempt %d/%d), sleeping %.1fs.",
-                    attempt + 1, _MAX_RETRIES, sleep_s,
-                )
-                time.sleep(sleep_s)
-                last_exc = exc
-            else:
-                raise
-    raise RuntimeError(
-        f"_batch_embed_text: failed after {_MAX_RETRIES} retries."
-    ) from last_exc
-
-
 def _batch_embed_multimodal(
     inputs: list[list[dict]],
     client: voyageai.Client,
@@ -413,9 +369,7 @@ def _batch_embed_multimodal(
     Executes one Voyage multimodal embedding API call for a batch of *inputs*.
 
     Each element of *inputs* is a list of content blocks (text + optional
-    image_bytes dicts) for one chunk.  Same retry logic as
-    :func:`_batch_embed_text`.
-
+    image_bytes dicts) for one chunk. 
     Args:
         inputs: ``list[list[dict]]`` — one inner list per chunk.
         client: Initialised :class:`voyageai.Client`.
