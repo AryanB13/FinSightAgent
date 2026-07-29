@@ -1,0 +1,37 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+dist/
+build/
+
+# Environment
+.env
+venv/
+env/
+ENV/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Data artifacts (generated during ingestion)
+data/
+logs/
+
+# Annual Reports - ignore all PDFs but keep folder structure
+Annual Reports/Apple/*.pdf
+Annual Reports/Microsoft/*.pdf
+Annual Reports/NVIDIA/*.pdf
+
+# Keep the folders themselves
+!Annual Reports/
+!Annual Reports/Apple/
+!Annual Reports/Microsoft/
+!Annual Reports/NVIDIA/
