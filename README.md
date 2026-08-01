@@ -1,6 +1,6 @@
 # FinSightAgent — Financial Research Agent
 
-> An agentic RAG system for financial document analysis. Ask plain-English questions about Apple, Microsoft, and NVIDIA annual reports; get cited, fact-checked answers with automatic computation of financial ratios.
+> An agentic RAG system that answers complex questions about SEC 10-K filings using hybrid keyword-semantic search, multimodal understanding of tables and charts, and a Python sandbox for on-the-fly financial ratio computation. Built with LangGraph orchestration, Pinecone vector search, and dual-layer caching for production-grade retrieval performance.
 
 ---
 
