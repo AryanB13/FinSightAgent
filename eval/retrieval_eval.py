@@ -45,7 +45,7 @@ class RetrievalResult:
     retrieved_chunk_ids: list[str]   # union of all sub-query top-5 results
     retrieved_chunk_texts: list[str] # .text of each retrieved chunk (same order as IDs)
     relevant_chunk_ids: list[str]    # ground truth from EvalQuery
-    precision: float                 # |retrieved ∩ relevant| / |retrieved|  (Precision@5 per sub-query, averaged)
+    precision: float                 # Context Precision@K — rank-weighted, normalised by relevant found in top-K
     recall: float                    # |retrieved ∩ relevant| / |relevant|
     n_sub_queries: int               # number of sub-queries run
     elapsed_seconds: float
@@ -55,16 +55,45 @@ class RetrievalResult:
 
 def compute_precision(retrieved: list[str], relevant: set[str]) -> float:
     """
-    Precision = # relevant chunks in retrieved set / # retrieved chunks.
+    Context Precision@K — rank-weighted precision normalised by relevant items
+    found in the top-K results (not by K itself).
 
-    For single sub-queries (direct_lookup): this is exactly Precision@5.
-    For multi sub-queries: this is precision over the union of all top-5 sets.
-    Returns 1.0 when retrieved is empty (no false positives possible).
+    Formula (from RAGAS):
+        Context Precision@K = Σ_{k=1}^{K} (Precision@k × v_k)
+                              ─────────────────────────────────
+                              Total relevant items in top-K results
+
+    Where:
+        Precision@k = (# relevant in top k positions) / k
+        v_k         = 1 if the chunk at rank k is relevant, else 0
+
+    Compared to simple Precision@K (hits / K):
+    - Simple P@K always divides by K=5, so a query with only 1 ground-truth
+      chunk can never exceed 0.20 — even with perfect retrieval.
+    - Context Precision@K normalises by relevant items *found*, so placing
+      the single relevant chunk at rank 1 returns 1.0 (correct behaviour).
+
+    Returns:
+        1.0  when retrieved is empty (no false positives possible).
+        0.0  when no relevant chunk appears anywhere in retrieved.
+        Rank-weighted score in (0, 1] otherwise.
     """
     if not retrieved:
         return 1.0
-    hits = sum(1 for cid in retrieved if cid in relevant)
-    return hits / len(retrieved)
+
+    total_relevant_in_topk = sum(1 for cid in retrieved if cid in relevant)
+    if total_relevant_in_topk == 0:
+        return 0.0
+
+    numerator: float = 0.0
+    hits_so_far: int = 0
+    for k, cid in enumerate(retrieved, start=1):
+        if cid in relevant:
+            hits_so_far += 1
+            precision_at_k = hits_so_far / k
+            numerator += precision_at_k  # × v_k=1
+
+    return numerator / total_relevant_in_topk
 
 
 def compute_recall(retrieved: list[str], relevant: set[str]) -> float:
@@ -280,9 +309,9 @@ def _aggregate(results: list[RetrievalResult]) -> dict:
         }
 
     return {
-        "mean_precision_at_5": mean_p,
-        "mean_recall_at_5":    mean_r,
-        "by_category":         cat_agg,
+        "mean_context_precision": mean_p,
+        "mean_recall_at_5":       mean_r,
+        "by_category":            cat_agg,
     }
 
 
@@ -295,7 +324,7 @@ _BOLD   = "\033[1m"
 _RESET  = "\033[0m"
 
 THRESHOLDS = {
-    "precision": 0.55,
+    "precision": 0.70,   # Context Precision@K — higher bar than simple P@5 (was 0.55)
     "recall":    0.65,
 }
 
@@ -328,10 +357,10 @@ def print_retrieval_report(
             f"threshold {thresh_label}  {tick}"
         )
 
-    p = agg["mean_precision_at_5"]
+    p = agg["mean_context_precision"]
     r = agg["mean_recall_at_5"]
-    print(_fmt("Precision@5  (mean)",  p, THRESHOLDS["precision"], "≥ 0.55"))
-    print(_fmt("Recall@5     (mean)",  r, THRESHOLDS["recall"],    "≥ 0.65"))
+    print(_fmt("Context Precision@K (mean)",  p, THRESHOLDS["precision"], "≥ 0.70"))
+    print(_fmt("Recall@5            (mean)",  r, THRESHOLDS["recall"],    "≥ 0.65"))
     print()
 
     # ── By category ────────────────────────────────────────────────────────

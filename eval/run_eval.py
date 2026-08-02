@@ -56,10 +56,10 @@ logger = logging.getLogger(__name__)
 # ── Thresholds (mirrors EVALUATION_PIPELINE.md §7) ───────────────────────────
 
 THRESHOLDS: dict[str, float] = {
-    "mean_precision_at_5":   0.55,
-    "mean_recall_at_5":      0.65,
-    "mean_faithfulness":     0.75,
-    "mean_answer_relevance": 0.70,
+    "mean_context_precision": 0.70,   # Context Precision@K (rank-weighted)
+    "mean_recall_at_5":       0.65,
+    "mean_faithfulness":      0.75,
+    "mean_answer_relevance":  0.70,
 }
 
 _GREEN = "\033[92m"
@@ -115,8 +115,8 @@ def print_summary_table(
     print(HDR)
     print(SEP)
     print(SECT.format("RETRIEVAL"))
-    print(_row("  Precision@5", ret_agg["mean_precision_at_5"], THRESHOLDS["mean_precision_at_5"], "≥ 0.55"))
-    print(_row("  Recall@5",    ret_agg["mean_recall_at_5"],    THRESHOLDS["mean_recall_at_5"],    "≥ 0.65"))
+    print(_row("  Context Precision@K", ret_agg["mean_context_precision"], THRESHOLDS["mean_context_precision"], "≥ 0.70"))
+    print(_row("  Recall@5",           ret_agg["mean_recall_at_5"],       THRESHOLDS["mean_recall_at_5"],       "≥ 0.65"))
 
     if gen_agg is not None:
         print(SECT.format("GENERATION"))
@@ -135,7 +135,7 @@ def _ret_result_to_dict(r: RetrievalResult) -> dict:
         "query_id":             r.query_id,
         "query":                r.query,
         "category":             r.category,
-        "precision_at_5":       round(r.precision, 4),
+        "context_precision":    round(r.precision, 4),
         "recall_at_5":          round(r.recall, 4),
         "retrieved_chunk_ids":  r.retrieved_chunk_ids,
         "relevant_chunk_ids":   r.relevant_chunk_ids,
@@ -168,8 +168,8 @@ def build_json_report(
 ) -> dict:
     """Builds the full JSON report dict for --output / --json."""
     aggregate: dict = {
-        "mean_precision_at_5": round(ret_agg["mean_precision_at_5"], 4),
-        "mean_recall_at_5":    round(ret_agg["mean_recall_at_5"],    4),
+        "mean_context_precision": round(ret_agg["mean_context_precision"], 4),
+        "mean_recall_at_5":       round(ret_agg["mean_recall_at_5"],       4),
     }
     if gen_agg is not None:
         aggregate["mean_faithfulness"]     = round(gen_agg["mean_faithfulness"],     4)
