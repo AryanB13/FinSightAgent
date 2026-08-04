@@ -13,9 +13,10 @@ directly reduces Gemini API calls for the day.
 from __future__ import annotations
 
 import logging
+import re
 from typing import Optional
 
-from query.config import PINECONE_NAMESPACES, ROUTE_DIRECT_LOOKUP, ROUTE_SINGLE_HOP
+from query.config import PINECONE_NAMESPACES, ROUTE_DIRECT_LOOKUP, ROUTE_SINGLE_HOP, ROUTE_MULTI_HOP
 from query.utils.gemini_client import GeminiCallCounter, call_structured
 from query.utils.prompts import ROUTER_SYSTEM_PROMPT, build_router_prompt
 from query.utils.schema import RouterOutput, SubQuery
@@ -111,6 +112,18 @@ def classify_query(
 
     route: str = result.get("route", "single_hop")
     needs_computation: bool = bool(result.get("needs_computation", False))
+
+    # Programmatic override: queries spanning multiple companies always require
+    # separate retrievals per company — force multi_hop so the Decomposer Agent
+    # builds one sub-query per company×year, preventing all companies from
+    # competing for the same top-5 rerank slots.
+    if len(valid_companies) > 1 and route != ROUTE_MULTI_HOP:
+        logger.info(
+            "classify_query: upgrading route %s → multi_hop "
+            "(multiple companies detected: %s)",
+            route, valid_companies,
+        )
+        route = ROUTE_MULTI_HOP
 
     logger.info(
         "classify_query: route=%s | companies=%s | years=%s | needs_computation=%s",

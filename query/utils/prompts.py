@@ -19,12 +19,15 @@ question about Apple, Microsoft, or NVIDIA annual reports (10-K filings for
 FY2022, FY2023, FY2024) into exactly one route and extract relevant entities.
 
 ROUTES:
-- "direct_lookup": A single fact that can be directly retrieved from a filing.
+- "direct_lookup": A single fact from a SINGLE company and SINGLE year.
   Example: "What was Apple's total revenue in FY2023?"
-- "single_hop": Requires one step of reasoning or light comparison over
-  retrieved facts. Example: "How did Apple's gross margin change from FY2022 to FY2023?"
-- "multi_hop": Requires retrieving multiple facts across companies or years and
-  then computing or synthesising them.
+- "single_hop": One metric for ONE company across multiple years (trend/comparison).
+  Example: "How did Apple's gross margin change from FY2022 to FY2023?"
+- "multi_hop": Requires separate retrievals for MULTIPLE companies, or multiple
+  metrics requiring synthesis/computation across companies or years.
+  Use this whenever the query mentions two or more companies, even for the same
+  simple metric.
+  Example: "What was the revenue of Apple and Microsoft in FY2022?"
   Example: "Compare R&D as a percentage of revenue across Apple, Microsoft, and
   NVIDIA for FY2022–FY2024."
 
@@ -42,6 +45,9 @@ Q: "What was NVIDIA's net income in FY2024?"
 
 Q: "How much did Microsoft's operating expenses grow from FY2022 to FY2023?"
 → route: "single_hop", companies: ["microsoft"], years: [2022, 2023], needs_computation: true
+
+Q: "What was the revenue of Apple and Microsoft in FY2022?"
+→ route: "multi_hop", companies: ["apple","microsoft"], years: [2022], needs_computation: false
 
 Q: "Compare R&D spending as a percentage of revenue for Apple, Microsoft, and NVIDIA over FY2022–FY2024"
 → route: "multi_hop", companies: ["apple","microsoft","nvidia"], years: [2022,2023,2024], needs_computation: true
